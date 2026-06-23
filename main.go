@@ -153,6 +153,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.buffer = newBuffer
 			m.cursor += 1
 
+		case "up":
+			currentLineStart := m.find_start_of_current_row(m.cursor)
+			xoffset := m.cursor - currentLineStart
+			prevLineEnd := currentLineStart - 1
+			prevLineStart := m.find_start_of_current_row(prevLineEnd)
+
+			if prevLineStart+xoffset <= prevLineEnd {
+				m.cursor = prevLineStart + xoffset
+			} else {
+				m.cursor = prevLineEnd
+			}
+
 		default:
 			runes := []rune(msg.String())
 
@@ -213,25 +225,17 @@ func (m model) View() tea.View {
 	return v
 }
 
-func (m model) find_start_of_current_row() int {
+func (m model) find_start_of_current_row(pos int) int {
 
-	// var lines []string
-	var currentLine string
-	var scanner1 int
-
-	for i, _ := range m.buffer {
-		// current position of cursor pointing
-		if i == m.cursor {
-			currentLine += "|"
-		}
-
-		//finding start of currentline
-		for j := m.cursor; j >= 0; j-- {
-			if m.buffer[j] == '\n' {
-				return j + 1
-			}
-		}
+	if pos <= 0 {
 		return 0
 	}
-
+	//finding start of currentline
+	for j := pos - 1; j >= 0; j-- {
+		if m.buffer[j] == '\n' {
+			// scanner1 = j+1
+			return j + 1
+		}
+	}
+	return 0
 }
