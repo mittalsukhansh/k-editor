@@ -71,6 +71,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.buffer) {
 				m.cursor += 1
 			}
+
 		case "backspace":
 			if m.cursor > 0 {
 				m.buffer = append(m.buffer[:m.cursor-1], m.buffer[m.cursor:]...)
@@ -155,6 +156,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "up":
 			currentLineStart := m.find_start_of_current_row(m.cursor)
+			if currentLineStart == 0 {
+				break
+			}
 			xoffset := m.cursor - currentLineStart
 			prevLineEnd := currentLineStart - 1
 			prevLineStart := m.find_start_of_current_row(prevLineEnd)
@@ -163,6 +167,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor = prevLineStart + xoffset
 			} else {
 				m.cursor = prevLineEnd
+			}
+
+		case "down":
+			currentLineStart := m.find_start_of_current_row(m.cursor)
+			currentLineEnd := m.find_end_of_current_line(m.cursor)
+			col := m.cursor - currentLineStart
+
+			if currentLineEnd >= len(m.buffer) {
+				break
+			}
+
+			nextLineStart := currentLineEnd + 1
+			nextLineEnd := m.find_end_of_current_line(nextLineStart)
+			nextLineLength := nextLineEnd - nextLineStart
+
+			if col >= nextLineLength {
+				m.cursor = nextLineEnd
+			} else {
+				m.cursor = col + nextLineStart
 			}
 
 		default:
@@ -230,12 +253,24 @@ func (m model) find_start_of_current_row(pos int) int {
 	if pos <= 0 {
 		return 0
 	}
+
 	//finding start of currentline
 	for j := pos - 1; j >= 0; j-- {
 		if m.buffer[j] == '\n' {
-			// scanner1 = j+1
 			return j + 1
 		}
 	}
 	return 0
+}
+func (m model) find_end_of_current_line(pos int) int {
+	if pos >= m.width {
+		return len(m.buffer)
+	}
+
+	for j := pos; j < len(m.buffer); j++ {
+		if m.buffer[j] == '\n' {
+			return j
+		}
+	}
+	return len(m.buffer)
 }
